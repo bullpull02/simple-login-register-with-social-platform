@@ -11,6 +11,6 @@ app.use(cors());
 app.use(express.json())
 app.use(bodyparser.urlencoded({extended:true}));
 
-app.use('/api/v1/user', user)
+app.use('/api', user)
 const PORT = process.env.PORT
 app.listen(PORT || 8000,()=>{console.log(`Port Running Successfuly on Port ${PORT}`.cyan.bold)})    
