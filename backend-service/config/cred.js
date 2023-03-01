@@ -8,4 +8,9 @@ const google = {
     client_secret : "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",
     callback_url : "http://localhost:8000/api/v1/user/sessions/oauth/google"
 }
-module.exports = {discord,google}
+const twitter = {
+    consumerKey: "TWITTER_CONSUMER_KEY",
+    consumerSecret: "TWITTER_CONSUMER_SECRET",
+    callbackURL: "http://localhost:8000/api/v1/user/sessions/oauth/twitter",
+}
+module.exports = {discord,google,twitter}
