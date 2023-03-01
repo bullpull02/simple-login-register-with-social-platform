@@ -4,14 +4,16 @@ const lodash = require("lodash");
 const hashPassword = require("../utils/hash");
 const passport = require('passport');
 const responseModify = require("../utils/response");
+const { google, discord } = require("../config/cred");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const DiscordStrategy = require('passport-discord').Strategy;
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: "42056636488-5pcnca03i14e5s0747qfqjbiddluf1ng.apps.googleusercontent.com",
-      clientSecret: "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",
-      callbackURL: "http://localhost:8000/api/v1/user/sessions/oauth/google",
+      clientID: google.client_id,
+      clientSecret: google.client_secret,
+      callbackURL: google.callback_url,
     },
     async function (accessToken, refreshToken, profile, cb) {
       try {
@@ -34,6 +36,30 @@ passport.use(
     }
   )
 );
+passport.use(new DiscordStrategy({
+    clientID: discord.client_id,
+    clientSecret: discord.client_secret,
+    callbackURL: discord.callback_url,
+    scope: ['identify', 'email']
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        // Find or create the user based on their Discord ID
+        const existingUser = await User.findOne({ _id: profile.id });
+        if (existingUser) {
+            return done(null, existingUser);
+        } else {
+            const newUser = new User({
+                _id: profile.id,
+                name: profile.username,
+                email: profile.email
+            });
+            const savedUser = await newUser.save();
+            return done(null, savedUser);
+        }
+    } catch (error) {
+        return done(error);
+    }
+}));
 const register = async (req, res) => {
   try {
     const userEach = await User.findOne({ email: req.body.email });
