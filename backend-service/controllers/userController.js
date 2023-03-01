@@ -2,11 +2,38 @@ const User = require("../models/users");
 const jwt = require("jsonwebtoken");
 const lodash = require("lodash");
 const hashPassword = require("../utils/hash");
+const passport = require('passport');
+const responseModify = require("../utils/response");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
-const { OAuth2Client } = require("google-auth-library");
-const uuid = require("uuid");
-const client = new OAuth2Client("your-client-id");
-const redirectUri = "http://localhost:8000/google/callback";
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: "42056636488-5pcnca03i14e5s0747qfqjbiddluf1ng.apps.googleusercontent.com",
+      clientSecret: "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",
+      callbackURL: "http://localhost:8000/api/v1/user/sessions/oauth/google",
+    },
+    async function (accessToken, refreshToken, profile, cb) {
+      try {
+        const user = await User.findById(profile.id);
+        if (user) {
+          return cb(null, user);
+        } else {
+          const new_user = new User({
+            _id: profile.id,
+            name: profile.displayName,
+            email: profile.emails[0].value,
+          });
+          const save_user = await new_user.save();
+          return cb(null, save_user);
+        }
+      } catch (error) {
+        console.log(error);
+        return cb(null, error);
+      }
+    }
+  )
+);
 const register = async (req, res) => {
   try {
     const userEach = await User.findOne({ email: req.body.email });
@@ -48,27 +75,8 @@ const defaultLogin = async (req, res) => {
     return res.json({ status: "error", retrieved_user: false });
   }
 };
-const googleLogin = async () => {
-  const state = uuid.v4();
-  const url = client.generateAuthUrl({
-    access_type: "offline",
-    prompt: "consent",
-    scope: "email profile openid",
-    state,
-    redirect_uri: redirectUri,
-  });
 
-  res.redirect(url);
+module.exports = {
+  register,
+  defaultLogin
 };
-const googleCallback = async () => {
-  const { code, state } = req.query;
-  const { tokens } = await client.getToken(code);
-
-  // Verify the state to prevent CSRF attacks
-  if (state !== req.session.state) {
-    res.status(401).send("Invalid state parameter");
-    return;
-  }
-  req.session.tokens = tokens;
-};
-module.exports = { register, defaultLogin , googleLogin,googleCallback};
