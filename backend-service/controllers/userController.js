@@ -2,12 +2,12 @@ const User = require("../models/users");
 const jwt = require("jsonwebtoken");
 const lodash = require("lodash");
 const hashPassword = require("../utils/hash");
-const passport = require('passport');
+const passport = require("passport");
 const responseModify = require("../utils/response");
-const { google, discord } = require("../config/cred");
+const { google, discord, twitter } = require("../config/cred");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const DiscordStrategy = require('passport-discord').Strategy;
-
+const DiscordStrategy = require("passport-discord").Strategy;
+const TwitterStrategy = require("passport-twitter").Strategy;
 passport.use(
   new GoogleStrategy(
     {
@@ -36,30 +36,63 @@ passport.use(
     }
   )
 );
-passport.use(new DiscordStrategy({
-    clientID: discord.client_id,
-    clientSecret: discord.client_secret,
-    callbackURL: discord.callback_url,
-    scope: ['identify', 'email']
-}, async (accessToken, refreshToken, profile, done) => {
-    try {
+passport.use(
+  new DiscordStrategy(
+    {
+      clientID: discord.client_id,
+      clientSecret: discord.client_secret,
+      callbackURL: discord.callback_url,
+      scope: ["identify", "email"],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
         // Find or create the user based on their Discord ID
         const existingUser = await User.findOne({ _id: profile.id });
         if (existingUser) {
-            return done(null, existingUser);
+          return done(null, existingUser);
         } else {
-            const newUser = new User({
-                _id: profile.id,
-                name: profile.username,
-                email: profile.email
-            });
-            const savedUser = await newUser.save();
-            return done(null, savedUser);
+          const newUser = new User({
+            _id: profile.id,
+            name: profile.username,
+            email: profile.email,
+          });
+          const savedUser = await newUser.save();
+          return done(null, savedUser);
         }
-    } catch (error) {
+      } catch (error) {
         return done(error);
+      }
     }
-}));
+  )
+);
+passport.use(
+  new TwitterStrategy(
+    {
+      consumerKey: twitter.consumerKey,
+      consumerSecret: twitter.consumerKey,
+      callbackURL: twitter.callbackURL,
+    },
+    async (token, tokenSecret, profile, done) => {
+      try {
+        // Find or create the user based on their Discord ID
+        const existingUser = await User.findOne({ _id: profile.id });
+        if (existingUser) {
+          return done(null, existingUser);
+        } else {
+          const newUser = new User({
+            _id: profile.id,
+            name: profile.username,
+            email: profile.emails,
+          });
+          const savedUser = await newUser.save();
+          return done(null, savedUser);
+        }
+      } catch (error) {
+        return done(error);
+      }
+    }
+  )
+);
 const register = async (req, res) => {
   try {
     const userEach = await User.findOne({ email: req.body.email });
@@ -104,5 +137,5 @@ const defaultLogin = async (req, res) => {
 
 module.exports = {
   register,
-  defaultLogin
+  defaultLogin,
 };
