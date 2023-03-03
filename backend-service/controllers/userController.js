@@ -111,7 +111,16 @@ const register = async (req, res) => {
     return error;
   }
 };
-
+const getValidUser = async (req, res) => {
+  let authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token == null) return null;
+  jwt.verify(token, process.env.secret_key_administration, (error, user) => {
+    if (error) return null;
+    req.user = user;
+    return res.json({ message: "The user message", user: user });
+  });
+};
 const defaultLogin = async (req, res) => {
   const retrieved_user = await User.findOne({
     newemail: req.body.email,
@@ -134,8 +143,49 @@ const defaultLogin = async (req, res) => {
     return res.json({ status: "error", retrieved_user: false });
   }
 };
+const deleteUser = async (req, res) => {
+  try {
+    const user = User.findById(req.params.id);
+    if (!user) {
+      return res.json({ message: "Invalid User! User does not exist." });
+    }
+    await user.remove();
+    return res.json({ message: "User removed successfully." });
+  } catch (error) {
+    return res.json({ message: "General Error occured" });
+  }
+};
+const updateUser = async (req, res) => {
+  const data = req.body;
+  try {
+    const user = await User.findById(req.params.id);
 
+    if (!user) return res.json({ message: "User not found" });
+    user.name = data.name;
+    user.email = data.email;
+    await user.save();
+    return res.json({ message: "Update successfuly", user: user });
+  } catch (error) {
+    return res.json({ message: "Failure of update general status" });
+  }
+};
+const showUsers = async (req, res) => {
+  try {
+    const user = await User.find();
+    if (!user) {
+      return user.json({ message: "No current available users." });
+    }
+    return res.json({ message: "Users retrieved successfully", user: user });
+  } catch (error) {
+    console.log(error);
+    return res.json({ message: "List not available" });
+  }
+};
 module.exports = {
   register,
   defaultLogin,
+  getValidUser,
+  deleteUser,
+  updateUser,
+  showUsers
 };
