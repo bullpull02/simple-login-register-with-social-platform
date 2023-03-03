@@ -2,11 +2,21 @@ const express = require("express");
 const passport = require("passport");
 const {
   register,
-  defaultLogin
+  defaultLogin,
+  getValidUser,
+  deleteUser,
+  updateUser,
+  showUsers,
 } = require("../controllers/userController");
+const validateUser = require("../middleware/validateUser");
 const user = express.Router();
 user.post("/signup", register);
 user.post("/login", defaultLogin);
+user.get("/check", getValidUser);
+user.delete("/delete/:id", deleteUser);
+user.patch("/update/:id", updateUser);
+user.get("/details", validateUser, showUsers);
+user.get("/user");
 user.get(
   "/auth/google/login",
   passport.authenticate("google", { scope: ["email", "profile", "openid"] })
