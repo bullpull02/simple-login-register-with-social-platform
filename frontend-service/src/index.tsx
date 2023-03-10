@@ -4,14 +4,17 @@ import './index.css';
 import { BrowserRouter } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { App } from './App';
-
+import 'react-toastify/dist/ReactToastify.css';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <BrowserRouter>
-    <ToastContainer style={{ fontSize: '0.8em' }} />
-    <App />
+    <GoogleOAuthProvider clientId='1071226693678-ckfpvtck6kirqh6m9um4a59t4984rs2d.apps.googleusercontent.com'>
+      <ToastContainer style={{ fontSize: '0.8em' }} />
+      <App />
+    </GoogleOAuthProvider>
   </BrowserRouter>
 );
 
