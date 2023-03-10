@@ -3,10 +3,10 @@ import Cookies from "js-cookie";
 
 class AuthService {
   signup(data: any) {
-    return http.post('/auth/register',data);
+    return http.post('/signup',data);
   }
   login(data: any) {
-    return http.post('/auth/login',data);
+    return http.post('/login',data);
   }
   getDecToken() {
     if (typeof window !== "undefined") {
@@ -21,23 +21,25 @@ class AuthService {
     const token = this.getDecToken();
     if (token) {
       try {
-        return http.get('/auth/user');
+        return http.get('/check');
       } catch (error: any) {
         console.log(error);
-        return false;
+        return ;
       }
     } else {
       console.log('No token');
+      window.location.pathname = '/auth/login'
       return;
     }
   }
   logout() {
     this.removeToken();
-    return (window.location.href = '/login');
+    return (window.location.href = '/auth/login');
   }
   removeToken() {
     Cookies.remove('LOCAL_STORAGE_TOKEN_KEY');
   }
+  
 }
 
 const authService = new AuthService();
