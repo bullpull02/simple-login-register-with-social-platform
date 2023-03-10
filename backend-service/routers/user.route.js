@@ -7,11 +7,13 @@ const {
   deleteUser,
   updateUser,
   showUsers,
+  googleSignIn,
 } = require("../controllers/userController");
 const validateUser = require("../middleware/validateUser");
 const user = express.Router();
 user.post("/signup", register);
 user.post("/login", defaultLogin);
+user.post("/google", googleSignIn);
 user.get("/check", getValidUser);
 user.delete("/delete/:id", deleteUser);
 user.patch("/update/:id", updateUser);
