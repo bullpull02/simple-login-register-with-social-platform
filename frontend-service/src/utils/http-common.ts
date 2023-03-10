@@ -4,7 +4,7 @@ import authService from '../services/auth.service';
 export const domain = `http://localhost:8000`
 
 export const http = axios.create({
-    baseURL: `${domain}/api`,
+    baseURL: `${domain}/api/v1/user`,
     headers: { 'Content-Type': 'application/json' }
 })
 http.interceptors.request.use(function (config:any) {
