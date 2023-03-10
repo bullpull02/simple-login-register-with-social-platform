@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../assets/logo'
 // import authService from '../services/auth.service'
 import { notifyInfo, notifySuccess } from '../utils/alerts'
+import authService from '../services/auth.service'
 const SignUp = () => {
     const navigate = useNavigate()
     const [formData, setFormData] = useState({
-        username: '',
+        name: '',
         email: '',
         password: ''
     });
@@ -20,7 +21,7 @@ const SignUp = () => {
         if (formData.password === '') {
             setIsValid(false)
         }
-        if (formData.username === '') {
+        if (formData.name === '') {
             setIsValid(false)
         }
         if (isValid) {
@@ -29,19 +30,19 @@ const SignUp = () => {
     }
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // try {
-        //     const data = await authService.signup(formData);
-        //     let message = data?.data?.message;
-        //     if (message === 'User created successfully'){
-        //         notifySuccess(message);
-        //         navigate('/auth/login')
-        //     } else {
-        //         notifyInfo(message);
-        //     }
-        // } catch (error: any) {
-        //     console.log(error)
-        //     return;
-        // }
+        try {
+            const data = await authService.signup(formData);
+            let message = data?.data?.message;
+            if (message === 'User created successfully'){
+                notifySuccess(message);
+                navigate('/auth/login')
+            } else {
+                notifyInfo(message);
+            }
+        } catch (error: any) {
+            console.log(error)
+            return;
+        }
     }
     const [showPassword, setShowPassword] = useState(false)
     return (
@@ -73,11 +74,11 @@ const SignUp = () => {
                         <div className='flex flex-col gap-4 py-2'>
                             <div>
                                 <input
-                                    value={formData.username}
-                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full px-8 text-white py-4 rounded-lg shadow-xl font-medium bg-slate-600 border border-main placeholder-gray-500 text-sm focus:outline-none "
                                     type="text"
-                                    placeholder="Username"
+                                    placeholder="name"
                                 />
                             </div>
                             <div>
