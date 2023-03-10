@@ -105,10 +105,15 @@ const register = async (req, res) => {
       let hashedpass = await hashPassword(user.password);
       user.password = hashedpass;
       const finalUser = await user.save();
-      res.json({ success: "ok", user: finalUser });
+      res.json({
+        success: "ok",
+        user: finalUser,
+        message: "User created successfully",
+      });
     }
   } catch (error) {
-    return error;
+    console.log(error);
+    return;
   }
 };
 const getValidUser = async (req, res) => {
@@ -118,8 +123,41 @@ const getValidUser = async (req, res) => {
   jwt.verify(token, process.env.secret_key_administration, (error, user) => {
     if (error) return null;
     req.user = user;
-    return res.json({ message: "The user message", user: user });
+    return res.json({ message: "User Retrieved Successfully", user: user });
   });
+};
+const googleSignIn = async (req, res) => {
+  const retrieved_user = await User.findOne({
+    newemail: req.body.email,
+    newPass: req.body.password,
+  });
+  if (retrieved_user) {
+    const token = jwt.sign(
+      {
+        name: retrieved_user.name,
+        email: retrieved_user.newemail,
+      },
+      process.env.secret_key_administration
+    );
+    return res.json({
+      status: "ok",
+      token: token,
+      user: retrieved_user,
+      message: "Authentication successful",
+    });
+  } else {
+    const newUser = new User({
+      _id: profile.id,
+      name: profile.username,
+      email: profile.email,
+    });
+    const savedUser = await newUser.save();
+    return res.json({
+      status: "ok",
+      user: savedUser,
+      message: "Redirect to login",
+    });
+  }
 };
 const defaultLogin = async (req, res) => {
   const retrieved_user = await User.findOne({
@@ -138,6 +176,7 @@ const defaultLogin = async (req, res) => {
       status: "ok",
       token: token,
       user: retrieved_user,
+      message: "Authentication successful",
     });
   } else {
     return res.json({ status: "error", retrieved_user: false });
@@ -187,5 +226,6 @@ module.exports = {
   getValidUser,
   deleteUser,
   updateUser,
-  showUsers
+  showUsers,
+  googleSignIn
 };
