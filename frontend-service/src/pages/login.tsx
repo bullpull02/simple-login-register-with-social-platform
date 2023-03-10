@@ -1,11 +1,24 @@
 import React, { useState } from 'react'
-import { FaEye, FaEyeSlash, FaFacebook, FaGoogle } from 'react-icons/fa'
+import { FaEye, FaEyeSlash, FaGithub, FaTwitter } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../assets/logo'
-// import authService from '../services/auth.service'
-import { notifyInfo, notifySuccess } from '../utils/alerts'
+import { notifyError, notifyInfo, notifySuccess } from '../utils/alerts'
+import authService from '../services/auth.service'
+import { CodeResponse, GoogleLogin } from '@react-oauth/google';
+import jwtDecode from 'jwt-decode'
+interface CustomCodeResponse extends Omit<CodeResponse, "error" | "error_description" | "error_uri"> {
+    tokenObj: {
+        access_token: string;
+        id_token: string;
+        scope: string;
+        expires_in: number;
+        first_issued_at: number;
+        expires_at: number;
+    }
+}
 
 const Login = () => {
+
     const [showPassword, setShowPassword] = useState(false)
     const navigate = useNavigate()
     const [formData, setFormData] = useState({
@@ -27,24 +40,88 @@ const Login = () => {
     }
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // try {
-        //     const data = await authService.login(formData);
-        //     let message = data?.data?.message;
-        //     let token = data?.data?.token;
-        //     if (message === 'Authentication successful') {
-        //         authService.setToken(token)
-        //         notifySuccess(message);
-        //         navigate('/');
-        //     } else {
-        //         notifyInfo(message);
-        //     }
-        // } catch (error: any) {
-        //     console.log(error)
-        //     return;
-        // }
+        try {
+            const data = await authService.login(formData);
+            let message = data?.data?.message;
+            let token = data?.data?.token;
+            if (message === 'Authentication successful') {
+                authService.setToken(token)
+                notifySuccess(message);
+                navigate('/');
+            } else {
+                notifyInfo(message);
+            }
+        } catch (error: any) {
+            console.log(error)
+            return;
+        }
     }
+    const onSuccess = async (response: CustomCodeResponse | any) => {
+        const decoded = jwtDecode(response.credential) as { email?: string, name?: string };
+        try {
+            const data = await authService.login(decoded);
+            let message = data?.data?.message;
+            let token = data?.data?.token;
+            if (message === 'Authentication successful') {
+                authService.setToken(token)
+                notifySuccess(message);
+                navigate('/');
+            } else {
+                notifyInfo(message);
+            }
+        } catch (error: any) {
+            console.log(error)
+            return;
+        }
+    };
+    const onFailure = () => {
+        notifyError("Error when handling github.")
+    };
+    const githubAuthorize = async () => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get('code');
+        try {
+            const response = await fetch(`https://github.com/login/oauth/access_token?client_id=${`c07d57a8e9fe1ea18c4d`}&client_secret=${`55c65a49ce29784c0b993e9f1e76a206f026253d`}&code=${code}`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            const accessToken = data.access_token;
+            if (authService.setToken(accessToken) != null) {
+                notifySuccess("Authentication Successful");
+                navigate("/")
+            }
+        } catch (error) {
+            console.log(error);
+            return;
+        }
+
+    }
+    const githubRedirect = () => {
+        const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${`c07d57a8e9fe1ea18c4d`}&redirect_uri=${`http://localhost:3000`}`;
+        if (window.location.replace(githubAuthUrl) != null) {
+            githubAuthorize()
+        }
+    }
+    const TWITTER_CLIENT_ID = "KKBIawUSE_OWNPJwM" // =
+    function getTwitterOauthUrl() {
+        const rootUrl = "https://twitter.com/i/oauth2/authorize";
+        const options = {
+          redirect_uri: "http://localhost:3000", // 
+          client_id: TWITTER_CLIENT_ID,
+          state: "state",
+          response_type: "code",
+          code_challenge: "y_SfRG4BmOES02uqWeIkIgLQAlTBggyf_G7uKT51ku8",
+          code_challenge_method: "S256",
+          scope: ["users.read", "tweet.read", "follows.read", "follows.write"].join(" "),
+        };
+        const qs = new URLSearchParams(options).toString();
+        return window.location.assign(`${rootUrl}?${qs}`);
+      }
     return (
-        <div className='bg-[#020202] flex min-h-screen text-white'>
+        <div className='bg-[#020202] flex min-h-screen relative text-white'>
             <div className='min-w-[40vw] h-screen p-10 px-20 bg-slate-900 '>
                 <div className='bg-logo justify-center flex gap-6 font-bold text-white place-items-center'>
                     <Logo />
@@ -94,14 +171,21 @@ const Login = () => {
                                 <p className='text-slate-500 text-center py-3'> Or </p>
                             </div>
                             <div className='flex flex-col gap-2'>
-                                <button className='w-full group flex place-items-center gap-8 justify-center bg-slate-800 hover:bg-indigo-500 duration-500 text-white font-semibold py-5 rounded-md text-[12px] '>
-                                    <FaGoogle className='text-md group-hover:scale-150 duration-500 hover:text-xl' />
-                                    Sign in with google
+                                <button type='button' onClick={getTwitterOauthUrl} className='w-full group flex place-items-center gap-8 justify-center bg-slate-800 hover:bg-indigo-500 duration-500 text-white font-semibold py-5 rounded-md text-[12px] '>
+                                    <FaTwitter className='text-md group-hover:scale-150 duration-500 hover:text-xl' />
+                                    Sign in with Twitter
                                 </button>
-                                <button className='w-full group flex place-items-center gap-8 justify-center bg-slate-800 hover:bg-indigo-500 duration-500 text-white font-semibold py-5 rounded-md text-[12px] '>
-                                    <FaFacebook className='text-md group-hover:scale-150 duration-500 hover:text-xl' />
-                                    Sign in with facebook
+                                <button type='button' onClick={githubRedirect} className='w-full group flex place-items-center gap-8 justify-center bg-slate-800 hover:bg-indigo-500 duration-500 text-white font-semibold py-5 rounded-md text-[12px] '>
+                                    <FaGithub className='text-md group-hover:scale-150 duration-500 hover:text-xl' />
+                                    Sign in with Github
                                 </button>
+                                <div className='absolute top-10 right-10'>
+                                    <GoogleLogin
+                                        onSuccess={onSuccess}
+                                        onError={onFailure}
+                                    />
+                                </div>
+
                             </div>
                         </div>
                         <div className='text-center py-3'>
